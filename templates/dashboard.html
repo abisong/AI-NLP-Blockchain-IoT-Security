@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="mb-4">Dashboard</h2>
+    
+    <div class="iot-data" id="iot-data">
+        <h3>IoT Sensor Data</h3>
+        <p>Temperature: {{ iot_data.temperature }}°C</p>
+        <p>Humidity: {{ iot_data.humidity }}%</p>
+        <p>Timestamp: {{ iot_data.timestamp }}</p>
+    </div>
+
+    <div class="sentiment-form">
+        <h3>Sentiment Analysis</h3>
+        <form id="sentiment-form">
+            <div class="mb-3">
+                <label for="text-input" class="form-label">Enter text for sentiment analysis:</label>
+                <textarea class="form-control" id="text-input" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze</button>
+        </form>
+        <div id="sentiment-result" class="mt-3 sentiment-result"></div>
+    </div>
+</div>
+{% endblock %}
