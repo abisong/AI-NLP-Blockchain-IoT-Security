@@ -1,0 +1,21 @@
+/* Custom styles to complement Bootstrap */
+.dashboard-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.iot-data {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.sentiment-form {
+    margin-bottom: 1rem;
+}
+
+.sentiment-result {
+    font-weight: bold;
+}
