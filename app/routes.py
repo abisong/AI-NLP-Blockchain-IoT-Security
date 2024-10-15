@@ -69,6 +69,8 @@ def logout():
 @login_required
 def dashboard():
     iot_data = iot_simulator.get_sensor_data()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(iot_data)
     return render_template('dashboard.html', iot_data=iot_data)
 
 @main.route('/analyze_sentiment', methods=['POST'])
@@ -78,10 +80,9 @@ def analyze_text_sentiment():
     sentiment = analyze_sentiment(text)
     encrypted_sentiment = encrypt_data(str(sentiment))
     
-    # Add transaction to blockchain instead of directly adding a block
     blockchain.add_transaction(current_user.username, "SentimentAnalysis", encrypted_sentiment)
     
-    return {'sentiment': sentiment}
+    return jsonify({'sentiment': sentiment})
 
 @main.route('/mine', methods=['GET'])
 @login_required
