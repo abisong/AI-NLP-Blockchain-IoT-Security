@@ -1,16 +1,15 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from . import db, login_manager
 from .models import User
-from .blockchain import Blockchain
+from .blockchain import blockchain
 from .iot_simulator import IoTSimulator
 from .nlp_utils import analyze_sentiment
 from .security import encrypt_data
 
 main = Blueprint('main', __name__)
 
-blockchain = Blockchain()
 iot_simulator = IoTSimulator()
 
 @login_manager.user_loader
@@ -78,5 +77,74 @@ def analyze_text_sentiment():
     text = request.form.get('text')
     sentiment = analyze_sentiment(text)
     encrypted_sentiment = encrypt_data(str(sentiment))
-    blockchain.add_block(encrypted_sentiment)
+    
+    # Add transaction to blockchain instead of directly adding a block
+    blockchain.add_transaction(current_user.username, "SentimentAnalysis", encrypted_sentiment)
+    
     return {'sentiment': sentiment}
+
+@main.route('/mine', methods=['GET'])
+@login_required
+def mine():
+    block = blockchain.mine_block(current_user.username)
+    response = {
+        'message': "New Block Mined",
+        'index': block.index,
+        'transactions': block.transactions,
+        'nonce': block.nonce,
+        'previous_hash': block.previous_hash
+    }
+    return jsonify(response), 200
+
+@main.route('/transactions/new', methods=['POST'])
+@login_required
+def new_transaction():
+    values = request.get_json()
+    required = ['recipient', 'amount']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+
+    index = blockchain.add_transaction(current_user.username, values['recipient'], values['amount'])
+    response = {'message': f'Transaction will be added to Block {index}'}
+    return jsonify(response), 201
+
+@main.route('/chain', methods=['GET'])
+def full_chain():
+    response = {
+        'chain': [vars(block) for block in blockchain.chain],
+        'length': len(blockchain.chain),
+    }
+    return jsonify(response), 200
+
+@main.route('/nodes/register', methods=['POST'])
+@login_required
+def register_nodes():
+    values = request.get_json()
+    nodes = values.get('nodes')
+    if nodes is None:
+        return "Error: Please supply a valid list of nodes", 400
+
+    for node in nodes:
+        blockchain.register_node(node)
+
+    response = {
+        'message': 'New nodes have been added',
+        'total_nodes': list(blockchain.nodes),
+    }
+    return jsonify(response), 201
+
+@main.route('/nodes/resolve', methods=['GET'])
+@login_required
+def consensus():
+    replaced = blockchain.resolve_conflicts()
+    if replaced:
+        response = {
+            'message': 'Our chain was replaced',
+            'new_chain': [vars(block) for block in blockchain.chain]
+        }
+    else:
+        response = {
+            'message': 'Our chain is authoritative',
+            'chain': [vars(block) for block in blockchain.chain]
+        }
+    return jsonify(response), 200
